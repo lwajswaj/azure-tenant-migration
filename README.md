@@ -1,2 +1,4 @@
-# azure-tenant-migration
-This repository contains a group of scripts to simplify the process to migrate subscription from one tenant to another
+# Azure Tenant Migration
+Moving Azure Subscription from one tenant to another might be a headacke since all RBAC in the subscriptions will be lost as well as KeyVaults would become unaccessible. At the same time, all groups and service principal names must be recreated with the exact same membership and same rights. In order to ease this work, I've put together these scripts to facilitate this task.
+
+The steps to migrate tenants are pretty straightforward however they must be executed in the right order for more information, you can visit [my blog](https://leandrowpblog.wordpress.com/2018/09/28/how-to-migrate-subscriptions-from-one-azure-ad-tenant-to-another) with details on how to perform these steps
