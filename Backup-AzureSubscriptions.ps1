@@ -6,7 +6,7 @@ Param(
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 if($null -eq $here){$here="."}
 
-$context = null
+$context = $null
 try {$context = Get-AzContext} catch {}
 if($null -eq $context.Subscription.Id) { throw 'You must call the Login-AzAccount cmdlet before calling any other cmdlets.' }
 
