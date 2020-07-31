@@ -18,9 +18,9 @@ Param(
   [switch]$SkipSubscription
 )
 
-$context = null
-try {$context = Get-AzureRmContext} catch {}
-if($null -eq $context.Subscription.Id) { throw 'You must call the Login-AzureRmAccount cmdlet before calling any other cmdlets.' }
+$context = $null
+try {$context = Get-AzContext} catch {}
+if($null -eq $context.Subscription.Id) { throw 'You must call the Login-AzAccount cmdlet before calling any other cmdlets.' }
 
 try { Get-AzureADTenantDetail -ErrorAction SilentlyContinue | Out-Null } catch { throw 'You must call the Connect-AzureAD cmdlet before calling any other cmdlets.' }
 
@@ -252,20 +252,20 @@ ForEach($Subscription In $OldTenant.Subscriptions) {
     }
 
     $FirstTime = $false
-    Select-AzureRmSubscription -SubscriptionId $Subscription.SubscriptionId
-  } while((Get-AzureRmContext).Subscription.Id -ne $Subscription.SubscriptionId)
+    Select-AzSubscription -SubscriptionId $Subscription.SubscriptionId
+  } while((Get-AzContext).Subscription.Id -ne $Subscription.SubscriptionId)
   
   if(!$SkipSubscription) {
     Write-Output "Retrieving current RBAC..."
-    $CurrentRights = Get-AzureRmRoleAssignment -Scope $Scope
+    $CurrentRights = Get-AzRoleAssignment -Scope $Scope
   }
   
-  $TenantId = (Get-AzureRmContext).Tenant.Id
+  $TenantId = (Get-AzContext).Tenant.Id
   Write-Verbose "Tenant ID is: $TenantId"
 
   if(!$SkipKeyVault) {
   Write-Output "`t Azure KeyVault"
-  ForEach($KeyVault In (Get-AzureRmKeyVault | Get-AzureRmResource | Where-Object -FilterScript {$_.Properties.tenantId -ne $TenantId})) {
+  ForEach($KeyVault In (Get-AzKeyVault | Get-AzResource | Where-Object -FilterScript {$_.Properties.tenantId -ne $TenantId})) {
   
     Write-Output ("`t`t Vault {0} at Resource Group {1}" -f $KeyVault.Name, $KeyVault.ResourceGroupName)
     
@@ -287,9 +287,9 @@ ForEach($Subscription In $OldTenant.Subscriptions) {
 	  }
     }
 
-    if($PSCmdlet.ShouldProcess($KeyVault,'Set-AzureRmResource')){
+    if($PSCmdlet.ShouldProcess($KeyVault,'Set-AzResource')){
       Write-Output "`t`tSaving changes"
-      Set-AzureRmResource -ResourceId $KeyVault.Id -Properties $KeyVault.Properties -Force -Verbose
+      Set-AzResource -ResourceId $KeyVault.Id -Properties $KeyVault.Properties -Force -Verbose
     }
     else
     {
@@ -309,18 +309,18 @@ ForEach($Subscription In $OldTenant.Subscriptions) {
     }
 
     Write-Verbose ("Granting {0} to '{1}'" -f $OldRight.RoleDefinitionName, $VerboseDisplayName)
-    if($PSCmdlet.ShouldProcess($VerboseDisplayName,'New-AzureRmRoleAssignment')) {
+    if($PSCmdlet.ShouldProcess($VerboseDisplayName,'New-AzRoleAssignment')) {
       $ObjectId = (Find-AzureObjectId -ObjectId $OldRight.ObjectId -ObjectType $OldRight.ObjectType)
 
       if($ObjectId) {
-        #if(-not (Get-AzureRmRoleAssignment -ObjectId $ObjectId -Scope $Scope -RoleDefinitionName $OldRight.RoleDefinitionName)) {
+        #if(-not (Get-AzRoleAssignment -ObjectId $ObjectId -Scope $Scope -RoleDefinitionName $OldRight.RoleDefinitionName)) {
         if(-not ($CurrentRights | Where-Object -FilterScript {$_.ObjectId -eq $ObjectId -and $_.ObjectType -eq $OldRight.ObjectType -and $_.RoleDefinitionName -eq $OldRight.RoleDefinitionName})){
-          New-AzureRmRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $OldRight.RoleDefinitionName -Scope $Scope
+          New-AzRoleAssignment -ObjectId $ObjectId -RoleDefinitionName $OldRight.RoleDefinitionName -Scope $Scope
         }
       }
     }
     else{
-      Write-Verbose "Cmdlet: New-AzureRmRoleAssignment"
+      Write-Verbose "Cmdlet: New-AzRoleAssignment"
       Write-Verbose "Param - ObjectId: $(Find-AzureObjectId -ObjectId $OldRight.ObjectId -ObjectType $OldRight.ObjectType)"
       Write-Verbose "Param - RoleDefinitionName: $($OldRight.RoleDefinitionName)"
     }
